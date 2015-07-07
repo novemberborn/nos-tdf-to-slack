@@ -16,20 +16,32 @@ function pollCoverage () {
     }
 
     const elem = window.document.querySelectorAll('[data-liveblog-url]')[0]
-    pathname = elem.getAttribute('data-liveblog-url')
-    before = elem.getAttribute('data-liveblog-end')
+    if (elem) {
+      pathname = elem.getAttribute('data-liveblog-url')
+      before = elem.getAttribute('data-liveblog-end')
+      setTimeout(pollCoverage, 60 * 60 * 1000)
 
-    console.log(`${before} <${pathname}>`)
+      console.log(`${before} <${pathname}>`)
+    } else {
+      pathname = before = null
+      setTimeout(pollCoverage, 5 * 60 * 1000)
+
+      console.log('No liveblog found')
+    }
 
     if (!polling) {
       polling = true
-      setInterval(pollCoverage, 60 * 60 * 1000)
       pollUpdates()
     }
   })
 }
 
 function pollUpdates () {
+  if (!pathname) {
+    polling = false
+    return
+  }
+
   jsdom.env(`http://nos.nl${pathname}?before=${before}`, {
     headers: { 'X-Requested-With': 'XMLHttpRequest' }
   }, function (err, window) {
