@@ -15,7 +15,7 @@ function pollCoverage () {
       return
     }
 
-    const [elem] = window.document.querySelectorAll('[data-liveblog-url]')
+    const elem = window.document.querySelector('[data-liveblog-url]')
     if (elem) {
       pathname = elem.getAttribute('data-liveblog-url')
       before = elem.getAttribute('data-liveblog-end')
@@ -51,10 +51,40 @@ function pollUpdates () {
     }
 
     for (const item of window.document.querySelectorAll('li')) {
-      const [{ textContent: title }] = item.querySelectorAll('h2')
-      const elements = Array.from(item.querySelectorAll('.liveblog__elements > *'))
+      const { textContent: title } = item.querySelector('h2')
+
+      const elements = Array.from(item.querySelector('.liveblog__elements').childNodes).filter(node => node.nodeType === 1)
       const body = elements.reduce((lines, node) => {
-        const text = node.textContent.trim().split(/\n+/).map(str => str.trim()).join('\n')
+        // Improve text representation of video blocks.
+        if (node.classList.contains('block_video')) {
+          const captionNode = node.querySelector('.caption_content')
+          if (captionNode) {
+            // Remove geoblock notices
+            tryRemove(captionNode.querySelector('.caption_content__icon-wrap'))
+            tryRemove(captionNode.querySelector('.caption-description__geo-content'))
+          }
+
+          // Play it safe in case there is no caption…
+          const caption = normalizeText(captionNode ? captionNode.textContent : '')
+          const { href } = node.querySelector('.video-play__link')
+          lines.push(`${caption} ${href}`.trim())
+          return lines
+        }
+
+        // Improve text representation of image blocks.
+        if (node.classList.contains('block_image')) {
+          const caption = normalizeText((node.querySelector('.caption_content') || {}).textContent || '')
+          const { src } = node.querySelector('img')
+          lines.push(`${caption} ${src}`.trim())
+          return lines
+        }
+
+        // Ensure links are separated by spaces.
+        for (const anchor of node.querySelectorAll('a')) {
+          anchor.parentNode.insertBefore(window.document.createTextNode(' '), anchor)
+        }
+
+        const text = normalizeText(node.textContent)
         if (text) {
           lines.push(text)
         }
@@ -74,6 +104,16 @@ function pollUpdates () {
     window.close()
     setTimeout(pollUpdates, 60 * 1000)
   })
+}
+
+function normalizeText (text) {
+  return text.trim().split(/\n+/).map(str => str.trim()).join('\n')
+}
+
+function tryRemove (node) {
+  if (node) {
+    node.parentNode.removeChild(node)
+  }
 }
 
 slack.onError = function (err) {
