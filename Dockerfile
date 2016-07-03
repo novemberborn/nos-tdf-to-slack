@@ -1,11 +1,8 @@
-FROM iojs:2.3.3
+FROM node:6.2.2-slim
 
 WORKDIR /app
+ENV NODE_ENV=production
 CMD ["node", "index.js"]
 
-RUN npm install -g npm@v3.x-next
-
-COPY package.json npm-shrinkwrap.json ./
-RUN npm install
-
-COPY ./ ./
+ADD node_modules.tgz ./node_modules/
+ADD app.tgz ./
