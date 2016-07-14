@@ -5,6 +5,7 @@ const slack = require('slack-notify')(process.env.NOS_TDF_SLACK_WEBHOOK_URL)
 
 let pathname = null
 let before = null
+let clock = 0
 
 let polling = false
 
@@ -19,11 +20,13 @@ function pollCoverage () {
     if (elem) {
       pathname = elem.getAttribute('data-liveblog-url')
       before = elem.getAttribute('data-liveblog-end')
+      clock++
       setTimeout(pollCoverage, 60 * 60 * 1000)
 
       console.log(`${before} <${pathname}>`)
     } else {
       pathname = before = null
+      clock++
       setTimeout(pollCoverage, 5 * 60 * 1000)
 
       console.log('No liveblog found')
@@ -42,6 +45,7 @@ function pollUpdates () {
     return
   }
 
+  const startClock = clock
   jsdom.env(`http://nos.nl${pathname}?before=${before}`, {
     headers: { 'X-Requested-With': 'XMLHttpRequest' }
   }, (err, window) => {
@@ -97,7 +101,9 @@ function pollUpdates () {
         text: `*${title}*\n\n${body.join('\n')}`
       })
 
-      before = item.getAttribute('id')
+      if (startClock === clock) {
+        before = item.getAttribute('id')
+      }
     }
 
     console.log(before)
