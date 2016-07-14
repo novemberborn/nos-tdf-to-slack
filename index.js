@@ -127,3 +127,7 @@ slack.onError = function (err) {
 }
 
 pollCoverage()
+
+process.on('SIGTERM', () => {
+  process.exit(0)
+})
