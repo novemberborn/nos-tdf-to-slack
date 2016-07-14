@@ -85,7 +85,9 @@ function pollUpdates () {
 
         // Ensure links are separated by spaces.
         for (const anchor of node.querySelectorAll('a')) {
-          anchor.parentNode.insertBefore(window.document.createTextNode(' '), anchor)
+          const { parentNode } = anchor
+          parentNode.insertBefore(window.document.createTextNode(' '), anchor)
+          parentNode.insertBefore(window.document.createTextNode(' '), anchor.nextSibling)
         }
 
         const text = normalizeText(node.textContent)
