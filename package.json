@@ -12,7 +12,7 @@
   "author": "Mark Wubben",
   "license": "ISC",
   "dependencies": {
-    "jsdom": "^9.4.0",
+    "jsdom": "^11.0.0",
     "slack-notify": "^0.1.6"
   },
   "devDependencies": {
