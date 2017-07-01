@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Tail the NOS live-feed for the Tour de France and post it to Slack",
   "main": "index.js",
+  "engines": {
+    "node": "8.x.x"
+  },
   "scripts": {
     "build": "./build.sh",
     "test": "as-i-preach"
