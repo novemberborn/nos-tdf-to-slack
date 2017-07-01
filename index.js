@@ -131,3 +131,5 @@ process.on('SIGTERM', () => {
 process.on('unhandledRejection', err => {
   process.nextTick(() => { throw err })
 })
+
+module.exports = () => 'Ahoy, world!'
