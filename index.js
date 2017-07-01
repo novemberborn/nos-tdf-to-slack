@@ -1,6 +1,7 @@
 'use strict'
 
-const jsdom = require('jsdom')
+const {JSDOM} = require('jsdom')
+const got = require('got')
 const slack = require('slack-notify')(process.env.NOS_TDF_SLACK_WEBHOOK_URL)
 
 let pathname = null
@@ -9,109 +10,100 @@ let clock = 0
 
 let polling = false
 
-function pollCoverage () {
-  jsdom.env('http://nos.nl/tour/live/', (err, window) => { // eslint-disable-line no-shadow
-    if (err) {
-      process.nextTick(() => { throw err })
-      return
-    }
+async function pollCoverage () {
+  const dom = await JSDOM.fromURL('http://nos.nl/tour/live/')
+  const elem = dom.window.document.querySelector('[data-liveblog-url]')
+  if (elem) {
+    pathname = elem.getAttribute('data-liveblog-url')
+    before = elem.getAttribute('data-liveblog-end')
+    clock++
+    setTimeout(pollCoverage, 60 * 60 * 1000)
 
-    const elem = window.document.querySelector('[data-liveblog-url]')
-    if (elem) {
-      pathname = elem.getAttribute('data-liveblog-url')
-      before = elem.getAttribute('data-liveblog-end')
-      clock++
-      setTimeout(pollCoverage, 60 * 60 * 1000)
+    console.log(`${before} <${pathname}>`)
+  } else {
+    pathname = before = null
+    clock++
+    setTimeout(pollCoverage, 5 * 60 * 1000)
 
-      console.log(`${before} <${pathname}>`)
-    } else {
-      pathname = before = null
-      clock++
-      setTimeout(pollCoverage, 5 * 60 * 1000)
+    console.log('No liveblog found')
+  }
 
-      console.log('No liveblog found')
-    }
-
-    if (!polling) {
-      polling = true
-      pollUpdates()
-    }
-  })
+  if (!polling) {
+    polling = true
+    pollUpdates()
+  }
 }
 
-function pollUpdates () {
+async function pollUpdates () {
   if (!pathname) {
     polling = false
     return
   }
 
   const startClock = clock
-  jsdom.env(`http://nos.nl${pathname}?before=${before}`, {
+  const {body: html} = await got(`http://nos.nl${pathname}?before=${before}&npo_cc_skip_wall=true`, {
     headers: { 'X-Requested-With': 'XMLHttpRequest' }
-  }, (err, window) => { // eslint-disable-line no-shadow
-    if (err) {
-      process.nextTick(() => { throw err })
-      return
-    }
-
-    for (const item of window.document.querySelectorAll('li')) {
-      const { textContent: title } = item.querySelector('h2')
-
-      const elements = Array.from(item.querySelector('.liveblog__elements').childNodes).filter(node => node.nodeType === 1)
-      const body = elements.reduce((lines, node) => {
-        // Improve text representation of video blocks.
-        if (node.classList.contains('block_video')) {
-          const captionNode = node.querySelector('.caption_content')
-          if (captionNode) {
-            // Remove geoblock notices
-            tryRemove(captionNode.querySelector('.caption_content__icon-wrap'))
-            tryRemove(captionNode.querySelector('.caption-description__geo-content'))
-          }
-
-          // Play it safe in case there is no caption…
-          const caption = normalizeText(captionNode ? captionNode.textContent : '')
-          const { href } = node.querySelector('.video-play__link')
-          lines.push(`${caption} ${href}`.trim())
-          return lines
-        }
-
-        // Improve text representation of image blocks.
-        if (node.classList.contains('block_image')) {
-          const caption = normalizeText((node.querySelector('.caption_content') || {}).textContent || '')
-          const { src } = node.querySelector('img')
-          lines.push(`${caption} ${src}`.trim())
-          return lines
-        }
-
-        // Ensure links are separated by spaces.
-        for (const anchor of node.querySelectorAll('a')) {
-          const { parentNode } = anchor
-          parentNode.insertBefore(window.document.createTextNode(' '), anchor)
-          parentNode.insertBefore(window.document.createTextNode(' '), anchor.nextSibling)
-        }
-
-        const text = normalizeText(node.textContent)
-        if (text) {
-          lines.push(text)
-        }
-        return lines
-      }, [])
-
-      slack.alert({
-        channel: '#tdf',
-        username: 'NOS Live',
-        text: `*${title}*\n\n${body.join('\n')}`
-      })
-
-      if (startClock === clock) {
-        before = item.getAttribute('id')
-      }
-    }
-
-    console.log(before)
-    window.close()
-    setTimeout(pollUpdates, 60 * 1000)
   })
+  const dom = new JSDOM(html)
+
+  const lifo = Array.from(dom.window.document.querySelectorAll('li')).reverse()
+  for (const item of lifo) {
+    const { textContent: title } = item.querySelector('h2')
+
+    const elements = Array.from(item.querySelector('.liveblog__elements').childNodes).filter(node => node.nodeType === 1)
+    const body = elements.reduce((lines, node) => {
+      // Improve text representation of video blocks.
+      if (node.classList.contains('block_video')) {
+        const captionNode = node.querySelector('.caption_content')
+        if (captionNode) {
+          // Remove geoblock notices
+          tryRemove(captionNode.querySelector('.caption_content__icon-wrap'))
+          tryRemove(captionNode.querySelector('.caption-description__geo-content'))
+        }
+
+        // Play it safe in case there is no caption…
+        const caption = normalizeText(captionNode ? captionNode.textContent : '')
+        const { href } = node.querySelector('.video-play__link')
+        lines.push(`${caption} ${href}`.trim())
+        return lines
+      }
+
+      // Improve text representation of image blocks.
+      if (node.classList.contains('block_image')) {
+        const caption = normalizeText((node.querySelector('.caption_content') || {}).textContent || '')
+        const { src } = node.querySelector('img')
+        lines.push(`${caption} ${src}`.trim())
+        return lines
+      }
+
+      // Ensure links are separated by spaces.
+      for (const anchor of node.querySelectorAll('a')) {
+        const { parentNode } = anchor
+        parentNode.insertBefore(dom.window.document.createTextNode(' '), anchor)
+        parentNode.insertBefore(dom.window.document.createTextNode(' '), anchor.nextSibling)
+      }
+
+      const text = normalizeText(node.textContent)
+      if (text) {
+        lines.push(text)
+      }
+      return lines
+    }, [])
+
+    slack.alert({
+      channel: '#tdf',
+      username: 'NOS Live',
+      text: `*${title}*\n\n${body.join('\n')}`
+    })
+
+    if (startClock === clock) {
+      before = item.getAttribute('id')
+    }
+  }
+
+  console.log(before)
+  dom.window.close()
+  setTimeout(pollUpdates, 60 * 1000)
 }
 
 function normalizeText (text) {
@@ -128,8 +120,14 @@ slack.onError = function (err) {
   process.nextTick(() => { throw err })
 }
 
-pollCoverage()
+pollCoverage().catch(err => {
+  process.nextTick(() => { throw err })
+})
 
 process.on('SIGTERM', () => {
   process.exit(0)
+})
+
+process.on('unhandledRejection', err => {
+  process.nextTick(() => { throw err })
 })
