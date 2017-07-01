@@ -7,7 +7,6 @@
     "node": "8.x.x"
   },
   "scripts": {
-    "build": "./build.sh",
     "test": "as-i-preach"
   },
   "author": "Mark Wubben",
