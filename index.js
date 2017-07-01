@@ -10,7 +10,7 @@ let clock = 0
 let polling = false
 
 function pollCoverage () {
-  jsdom.env('http://nos.nl/tour/live/', (err, window) => {
+  jsdom.env('http://nos.nl/tour/live/', (err, window) => { // eslint-disable-line no-shadow
     if (err) {
       process.nextTick(() => { throw err })
       return
@@ -48,7 +48,7 @@ function pollUpdates () {
   const startClock = clock
   jsdom.env(`http://nos.nl${pathname}?before=${before}`, {
     headers: { 'X-Requested-With': 'XMLHttpRequest' }
-  }, (err, window) => {
+  }, (err, window) => { // eslint-disable-line no-shadow
     if (err) {
       process.nextTick(() => { throw err })
       return
