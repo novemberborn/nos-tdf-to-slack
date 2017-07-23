@@ -1,5 +1,6 @@
 'use strict'
 
+const http = require('http')
 const {JSDOM} = require('jsdom')
 const got = require('got')
 const slack = require('slack-notify')(process.env.NOS_TDF_SLACK_WEBHOOK_URL)
@@ -132,4 +133,6 @@ process.on('unhandledRejection', err => {
   process.nextTick(() => { throw err })
 })
 
-module.exports = () => 'Ahoy, world!'
+http.createServer((req, res) => {
+  res.end('Ahoy, world!')
+}).listen(3000)
