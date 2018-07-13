@@ -1,6 +1,7 @@
 'use strict'
 
 const http = require('http')
+const {URL} = require('url')
 const {promisify} = require('util')
 const {JSDOM} = require('jsdom')
 const got = require('got')
@@ -69,7 +70,7 @@ async function pollUpdates () {
         // Play it safe in case there is no caption…
         const caption = normalizeText(captionNode ? captionNode.textContent : '')
         const {href} = node.querySelector('.video-play__link')
-        lines.push(`${caption} ${href}`.trim())
+        lines.push(`${caption} ${new URL(href, 'https://nos.nl').href}`.trim())
         return lines
       }
 
