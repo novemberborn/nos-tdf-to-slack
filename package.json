@@ -13,12 +13,12 @@
   "author": "Mark Wubben",
   "license": "ISC",
   "dependencies": {
-    "got": "^7.1.0",
-    "jsdom": "^11.0.0",
+    "got": "^8.3.2",
+    "jsdom": "^11.11.0",
     "slack-notify": "^0.1.6"
   },
   "devDependencies": {
-    "@novemberborn/as-i-preach": "^10.1.0"
+    "@novemberborn/as-i-preach": "^11.0.0"
   },
   "standard-engine": "@novemberborn/as-i-preach"
 }
