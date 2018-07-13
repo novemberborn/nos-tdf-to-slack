@@ -95,7 +95,9 @@ async function pollUpdates () {
       return lines
     }, [])
 
-    await send(`*${title}*\n\n${body.join('\n')}`)
+    const text = `*${title}*\n\n${body.join('\n')}`
+    console.log(`${text}\n\n---\n\n`)
+    await send(text)
 
     if (startClock === clock) {
       before = item.getAttribute('id')
