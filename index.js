@@ -1,9 +1,13 @@
 'use strict'
 
 const http = require('http')
+const {promisify} = require('util')
 const {JSDOM} = require('jsdom')
 const got = require('got')
-const slack = require('slack-notify')(process.env.NOS_TDF_SLACK_WEBHOOK_URL)
+const {IncomingWebhook} = require('@slack/client')
+
+const webhook = new IncomingWebhook(process.env.NOS_TDF_SLACK_WEBHOOK_URL)
+const send = promisify(webhook.send).bind(webhook)
 
 let pathname = null
 let before = null
@@ -91,11 +95,7 @@ async function pollUpdates () {
       return lines
     }, [])
 
-    slack.alert({
-      channel: '#tdf',
-      username: 'NOS Live',
-      text: `*${title}*\n\n${body.join('\n')}`
-    })
+    await send(`*${title}*\n\n${body.join('\n')}`)
 
     if (startClock === clock) {
       before = item.getAttribute('id')
@@ -115,10 +115,6 @@ function tryRemove (node) {
   if (node) {
     node.parentNode.removeChild(node)
   }
-}
-
-slack.onError = function (err) {
-  process.nextTick(() => { throw err })
 }
 
 pollCoverage().catch(err => {

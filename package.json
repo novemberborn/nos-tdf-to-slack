@@ -13,9 +13,10 @@
   "author": "Mark Wubben",
   "license": "ISC",
   "dependencies": {
+    "@slack/client": "^4.3.1",
     "got": "^8.3.2",
     "jsdom": "^11.11.0",
-    "slack-notify": "^0.1.6"
+    "request": "^2.87.0"
   },
   "devDependencies": {
     "@novemberborn/as-i-preach": "^11.0.0"
