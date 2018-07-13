@@ -4,7 +4,7 @@
   "description": "Tail the NOS live-feed for the Tour de France and post it to Slack",
   "main": "index.js",
   "engines": {
-    "node": "8.x.x"
+    "node": "10.x.x"
   },
   "scripts": {
     "start": "node index.js",
