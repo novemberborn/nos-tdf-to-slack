@@ -17,7 +17,7 @@ let clock = 0
 let polling = false
 
 async function pollCoverage () {
-  const dom = await JSDOM.fromURL('http://nos.nl/tour/live/')
+  const dom = await JSDOM.fromURL('https://nos.nl/tour/live/')
   const elem = dom.window.document.querySelector('[data-liveblog-url]')
   if (elem) {
     pathname = elem.getAttribute('data-liveblog-url')
@@ -47,7 +47,7 @@ async function pollUpdates () {
   }
 
   const startClock = clock
-  const { body: html } = await got(`http://nos.nl${pathname}?before=${before}&npo_cc_skip_wall=true`, {
+  const { body: html } = await got(`https://nos.nl${pathname}?before=${before}&npo_cc_skip_wall=true`, {
     headers: { 'X-Requested-With': 'XMLHttpRequest' }
   })
   const dom = new JSDOM(html)
