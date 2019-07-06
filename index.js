@@ -133,7 +133,3 @@ process.on('SIGTERM', () => {
 process.on('unhandledRejection', err => {
   process.nextTick(() => { throw err })
 })
-
-http.createServer((req, res) => {
-  res.end('Ahoy, world!')
-}).listen(3000)
