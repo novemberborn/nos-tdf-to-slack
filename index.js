@@ -81,6 +81,11 @@ async function pollUpdates () {
         return lines
       }
 
+      // Ignore nested audio blocks
+      if (node.classList.contains('block_audio')) {
+        return lines
+      }
+
       // Ensure links are separated by spaces.
       for (const anchor of node.querySelectorAll('a')) {
         const { parentNode } = anchor
