@@ -43,6 +43,7 @@ async function pollCoverage () {
 async function pollUpdates () {
   if (!pathname) {
     polling = false
+    console.log('Stop polling')
     return
   }
 
