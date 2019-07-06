@@ -1,0 +1,7 @@
+/.dockerignore
+/.eslintrc.js
+/.git
+/.gitignore
+/Dockerfile
+/node_modules
+/README.md
