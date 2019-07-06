@@ -13,10 +13,9 @@
   "author": "Mark Wubben",
   "license": "ISC",
   "dependencies": {
-    "@slack/client": "^4.3.1",
-    "got": "^8.3.2",
-    "jsdom": "^11.11.0",
-    "request": "^2.87.0"
+    "@slack/client": "^5.0.1",
+    "got": "^9.6.0",
+    "jsdom": "^15.1.1"
   },
   "devDependencies": {
     "eslint": "^6.0.1",
