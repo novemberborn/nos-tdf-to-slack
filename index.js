@@ -1,11 +1,11 @@
 'use strict'
 
 const http = require('http')
-const {URL} = require('url')
-const {promisify} = require('util')
-const {JSDOM} = require('jsdom')
+const { URL } = require('url')
+const { promisify } = require('util')
+const { JSDOM } = require('jsdom')
 const got = require('got')
-const {IncomingWebhook} = require('@slack/client')
+const { IncomingWebhook } = require('@slack/client')
 
 const webhook = new IncomingWebhook(process.env.NOS_TDF_SLACK_WEBHOOK_URL)
 const send = promisify(webhook.send).bind(webhook)
@@ -47,14 +47,14 @@ async function pollUpdates () {
   }
 
   const startClock = clock
-  const {body: html} = await got(`http://nos.nl${pathname}?before=${before}&npo_cc_skip_wall=true`, {
-    headers: {'X-Requested-With': 'XMLHttpRequest'}
+  const { body: html } = await got(`http://nos.nl${pathname}?before=${before}&npo_cc_skip_wall=true`, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
   })
   const dom = new JSDOM(html)
 
   const lifo = Array.from(dom.window.document.querySelectorAll('li')).reverse()
   for (const item of lifo) {
-    const {textContent: title} = item.querySelector('h2')
+    const { textContent: title } = item.querySelector('h2')
 
     const elements = Array.from(item.querySelector('.liveblog__elements').childNodes).filter(node => node.nodeType === 1)
     const body = elements.reduce((lines, node) => {
@@ -69,7 +69,7 @@ async function pollUpdates () {
 
         // Play it safe in case there is no caption…
         const caption = normalizeText(captionNode ? captionNode.textContent : '')
-        const {href} = node.querySelector('.video-play__link')
+        const { href } = node.querySelector('.video-play__link')
         lines.push(`${caption} ${new URL(href, 'https://nos.nl').href}`.trim())
         return lines
       }
@@ -77,14 +77,14 @@ async function pollUpdates () {
       // Improve text representation of image blocks.
       if (node.classList.contains('block_image')) {
         const caption = normalizeText((node.querySelector('.caption_content') || {}).textContent || '')
-        const {src} = node.querySelector('img')
+        const { src } = node.querySelector('img')
         lines.push(`${caption} ${src}`.trim())
         return lines
       }
 
       // Ensure links are separated by spaces.
       for (const anchor of node.querySelectorAll('a')) {
-        const {parentNode} = anchor
+        const { parentNode } = anchor
         parentNode.insertBefore(dom.window.document.createTextNode(' '), anchor)
         parentNode.insertBefore(dom.window.document.createTextNode(' '), anchor.nextSibling)
       }
