@@ -2,13 +2,11 @@
 
 const http = require('http')
 const { URL } = require('url')
-const { promisify } = require('util')
 const { JSDOM } = require('jsdom')
 const got = require('got')
-const { IncomingWebhook } = require('@slack/client')
+const { IncomingWebhook } = require('@slack/webhook')
 
 const webhook = new IncomingWebhook(process.env.NOS_TDF_SLACK_WEBHOOK_URL)
-const send = promisify(webhook.send).bind(webhook)
 
 let pathname = null
 let before = null
@@ -99,7 +97,7 @@ async function pollUpdates () {
 
     const text = `*${title}*\n\n${body.join('\n')}`
     console.log(`${text}\n\n---\n\n`)
-    await send(text)
+    await webhook.send({ text })
 
     if (startClock === clock) {
       before = item.getAttribute('id')
