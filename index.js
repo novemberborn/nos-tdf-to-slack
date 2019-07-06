@@ -120,9 +120,7 @@ function tryRemove (node) {
   }
 }
 
-pollCoverage().catch(err => {
-  process.nextTick(() => { throw err })
-})
+pollCoverage()
 
 process.on('SIGTERM', () => {
   process.exit(0)
