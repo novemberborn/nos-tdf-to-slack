@@ -1,6 +1,5 @@
 'use strict'
 
-const http = require('http')
 const { URL } = require('url')
 const { JSDOM } = require('jsdom')
 const got = require('got')
