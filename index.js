@@ -8,8 +8,9 @@ const { IncomingWebhook } = require('@slack/webhook')
 const webhook = new IncomingWebhook(process.env.NOS_TDF_SLACK_WEBHOOK_URL)
 
 let pathname = null
-let before = null
+let before
 let clock = 0
+let day = 0
 
 let polling = false
 
@@ -17,18 +18,25 @@ async function pollCoverage () {
   const dom = await JSDOM.fromURL('https://nos.nl/tour/live/')
   const elem = dom.window.document.querySelector('[data-liveblog-url]')
   if (elem) {
-    pathname = elem.getAttribute('data-liveblog-url')
-    before = elem.getAttribute('data-liveblog-end')
-    clock++
-    setTimeout(pollCoverage, 60 * 60 * 1000)
+    const newUrl = elem.getAttribute('data-liveblog-url')
+    if (pathname !== newUrl) { // Update the path we're polling from.
+      pathname = newUrl
 
-    console.log(`${before} <${pathname}>`)
-  } else {
-    pathname = before = null
-    clock++
-    setTimeout(pollCoverage, 5 * 60 * 1000)
+      // The path may change throughout the day.
+      const today = new Date().getUTCDate()
+      if (day !== today) {
+        // Only on new days do we fetch all updates.
+        day = today
+        before = undefined
+      } else {
+        // Ensure our ID has not been invalidated.
+        before = elem.getAttribute('data-liveblog-end')
+      }
+      clock++
+    }
+    setTimeout(pollCoverage, 15 * 60 * 1000)
 
-    console.log('No liveblog found')
+    console.log(`${before || 'everything'} <${pathname}>`)
   }
 
   if (!polling) {
@@ -38,21 +46,19 @@ async function pollCoverage () {
 }
 
 async function pollUpdates () {
-  if (!pathname) {
-    polling = false
-    console.log('Stop polling')
-    return
-  }
-
   const startClock = clock
-  const { body: html } = await got(`https://nos.nl${pathname}?before=${before}&npo_cc_skip_wall=true`, {
-    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  const { body: html } = await got(`https://nos.nl${pathname}`, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    query: { before: before || undefined }
   })
   const dom = new JSDOM(html)
 
   const lifo = Array.from(dom.window.document.querySelectorAll('li')).reverse()
   for (const item of lifo) {
-    const { textContent: title } = item.querySelector('h2')
+    const h2 = item.querySelector('h2')
+    if (!h2) continue
+
+    const { textContent: title } = h2
 
     const elements = Array.from(item.querySelector('.liveblog__elements').childNodes).filter(node => node.nodeType === 1)
     const body = elements.reduce((lines, node) => {
